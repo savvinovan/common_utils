@@ -1,4 +1,4 @@
-package wrapper_db
+package wdb
 
 import (
 	"database/sql"
