@@ -263,3 +263,7 @@ func SendTg(sen Sender, level Level, s string, f string) {
 func getTgUrl(level string, s string, f string) string {
 	return chl.tgurl + url.QueryEscape(chl.service+": "+level+" "+s+" "+f)
 }
+
+func GetPtr() *Chlogger {
+	return chl
+}

@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"github.com/jmoiron/sqlx"
-	log "github.com/savvinovan/common_utils/errors"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -16,6 +15,12 @@ type wrapperDB struct {
 	dbpass string
 	dbport string
 	dbname string
+	log    Logger
+}
+
+type Logger interface {
+	Info(args ...interface{})
+	Error(args ...interface{})
 }
 
 var (
@@ -76,12 +81,13 @@ func (w *wrapperDB) Rebind(query string) string {
 	return w.db.Rebind(query)
 }
 
-func New(dbaddr string, dbuser string, dbpass string, dbport string, dbname string) {
+func New(dbaddr string, dbuser string, dbpass string, dbport string, dbname string, log Logger) {
 	wdb.dbaddr = dbaddr
 	wdb.dbuser = dbuser
 	wdb.dbpass = dbpass
 	wdb.dbport = dbport
 	wdb.dbname = dbname
+	wdb.log = log
 	Connect()
 }
 
@@ -97,12 +103,12 @@ func Connect() bool {
 		wdb.dbaddr = viper.GetString("app.db.addr")
 	}
 	for {
-		log.Info("Попытка подключения к базе данных")
+		wdb.log.Info("Попытка подключения к базе данных")
 		wdb.db, err = Dial()
 		if err != nil {
 			continue
 		} else {
-			log.Info("К БД подключилсь")
+			wdb.log.Info("К БД подключилсь")
 			break
 		}
 	}
@@ -115,20 +121,20 @@ func Dial() (dbx *sqlx.DB, err error) {
 		"mysql",
 		wdb.dbuser+":"+wdb.dbpass+"@tcp("+wdb.dbaddr+":"+wdb.dbport+")/"+wdb.dbname+"?charset=utf8mb4,utf8")
 	if err != nil {
-		log.Error("error connection db ", err)
+		wdb.log.Error("error connection db ", err)
 		return
 	}
 	dbx.SetMaxOpenConns(10)
-	log.Info("Posts DB started")
+	wdb.log.Info("Posts DB started")
 	return dbx, nil
 }
 
 func PingDB() bool {
 	err := wdb.db.Ping()
 	if err != nil {
-		log.Error("error 1 PingDB ", err)
+		wdb.log.Error("error 1 PingDB ", err)
 		if err := wdb.db.Close(); err != nil {
-			log.Error("error 2 PingDB ", err)
+			wdb.log.Error("error 2 PingDB ", err)
 		}
 		return Connect()
 	}
