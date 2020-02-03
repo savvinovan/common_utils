@@ -6,4 +6,4 @@ db.New(viper.GetString("app.db.addr"),
 			viper.GetString("app.db.password"),
 			viper.GetString("app.db.port"),
 			viper.GetString("app.db.name"))
-      ```
+```
