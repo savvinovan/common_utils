@@ -95,17 +95,18 @@ type Logger interface {
 	Info(...interface{})
 	Printf(string, ...interface{})
 	Error(...interface{})
+	Errorf(string, ...interface{})
 	Fatal(...interface{})
 	Panic(...interface{})
 	Debug(...interface{})
 	Fatalf(string, ...interface{})
 }
 
-func SetChlogger(chlogger *Chlogger) {
+func SetChlogger(chlogger Logger) {
 	chl = chlogger
 }
 
-func NewChlogger() *Chlogger {
+func NewChlogger() Logger {
 	return &Chlogger{
 		Log: logrus.New(),
 		Out: os.Stdout,
@@ -127,6 +128,10 @@ func (m *MyError) FormatError(p xerrors.Printer) error {
 		m.frame.Format(p)
 	}
 	return nil
+}
+
+func (c *Chlogger) Debugf(s string, args ...interface{}) {
+	c.Log.Debugf(s, args...)
 }
 
 func (c *Chlogger) Error(args ...interface{}) {
@@ -198,7 +203,7 @@ func (c *Chlogger) Fatalf(pattern string, args ...interface{}) {
 }
 
 func Run(tgurl, service, reqUrl, env string) {
-	chl.tgurl, chl.service, chl.reqUrl, chl.env = tgurl, service, reqUrl, env
+	chl.(*Chlogger).tgurl, chl.(*Chlogger).service, chl.(*Chlogger).reqUrl, chl.(*Chlogger).env = tgurl, service, reqUrl, env
 }
 
 type ClickHouse struct {
@@ -211,7 +216,7 @@ func (c *ClickHouse) Send(s string) {
 	req := fasthttp.AcquireRequest()
 	req.SetBody([]byte(s))
 	req.Header.SetMethodBytes([]byte("POST"))
-	req.SetRequestURIBytes([]byte(chl.reqUrl))
+	req.SetRequestURIBytes([]byte(chl.(*Chlogger).reqUrl))
 	res := fasthttp.AcquireResponse()
 	if err := fasthttp.Do(req, res); err != nil {
 		logrus.Info("Request to kittenhouse response with error - " + err.Error())
@@ -245,8 +250,8 @@ func SendCH(sen Sender, level Level, s string, f string) {
 			t,     // timestamp
 			level, // level (DEBUG, INFO, etc)
 			s,     // Message
-			chl.service,
-			chl.env,
+			chl.(*Chlogger).service,
+			chl.(*Chlogger).env,
 		)
 		sen.Send(msg)
 	}()
@@ -261,9 +266,9 @@ func SendTg(sen Sender, level Level, s string, f string) {
 }
 
 func getTgUrl(level string, s string, f string) string {
-	return chl.tgurl + url.QueryEscape(chl.service+": "+level+" "+s+" "+f)
+	return chl.(*Chlogger).tgurl + url.QueryEscape(chl.(*Chlogger).service+": "+level+" "+s+" "+f)
 }
 
 func GetPtr() *Chlogger {
-	return chl
+	return chl.(*Chlogger)
 }
