@@ -15,6 +15,7 @@ var (
 	chl = NewChlogger()
 )
 
+// Chlogger struct used to store chlogger specific data
 type Chlogger struct {
 	Log     Logger
 	Out     io.Writer
@@ -24,6 +25,7 @@ type Chlogger struct {
 	env     string
 }
 
+// Level Enum used to store error level
 type Level int
 
 const (
